@@ -1,0 +1,41 @@
+# $Id: Makefile,v 1.7 2008-12-26 20:23:37 Stevan_White Exp $
+
+SFDS=FreeMonoBoldOblique.sfd FreeMonoBold.sfd FreeMonoOblique.sfd FreeMono.sfd \
+FreeSansBoldOblique.sfd FreeSansBold.sfd FreeSansOblique.sfd FreeSans.sfd \
+FreeSerifBoldItalic.sfd FreeSerifBold.sfd FreeSerifItalic.sfd FreeSerif.sfd
+MSFDS=FreeMonoBoldOblique.sfd FreeMonoBold.sfd FreeMonoOblique.sfd FreeMono.sfd
+TTFS=$(SFDS:.sfd=.ttf)
+OTFS=$(SFDS:.sfd=.otf)
+FF=fontforge -lang=ff -script 
+FFPY=fontforge -lang=py -script 
+
+TESTFF=if test `fontforge --version 2> /dev/null | grep '^fontforge' | sed -e 's/^fontforge //'` -lt 20080429 ; then echo FontForge version too old; exit 1; fi
+
+
+.SUFFIXES: $(SUFFIXES) .sfd .ttf .otf
+
+%.otf : %.sfd
+	@ $(TESTFF)
+	@ ( $(FFPY) ../tools/GenerateOpenType $< 2>/dev/stdout 1>/dev/stderr | tail -n +4 ) 2>&1 
+
+%.ttf : %.sfd
+	@ $(TESTFF)
+	@ ( $(FFPY) ../tools/GenerateTrueType $< 3>&1 1>&2 2>&3 | tail -n +4 ) 3>&1 1>&2 2>&3 2>&1 
+
+all: ttf otf
+
+ttf: $(TTFS)
+
+otf: $(OTFS)
+
+tests:
+	@ $(TESTFF)
+	@ ( $(FFPY) ../tools/isMonoMono.py $(MSFDS) 3>&1 1>&2 2>&3 | tail -n +4 ) 3>&1 1>&2 2>&3 2>&1
+	@ ../tools/checkGlyphNumbers.py 2>&1
+	@ ../tools/validate.py 2>&1
+
+clean:
+	rm -f $(TTFS) $(OTFS) build.log
+
+distclean:
+	rm -f $(TTFS) $(OTFS) build.log
